@@ -396,6 +396,7 @@ const ListItem = React.memo(({index,reload}) =>{ //나중에 매개변수받아�
     checklist[index].text = val;
     setText(val)
   }}
+  maxLength={checkLen}
   /> 
   }    
   </View>
