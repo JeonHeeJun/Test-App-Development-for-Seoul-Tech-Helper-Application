@@ -18,7 +18,7 @@ import AsyncStorage from '@react-native-community/async-storage';
 import HomeScreen from './HomeScreen'; 
 import ScheduleScreen from './ScheduleScreen';
 import {SEE_ALL_POSTERS,POST_VIEW,POST_UPLOAD,POST_DELETE,
-  POST_LOAD,COMMENT_UPLOAD,COMMENT_DELETE,POST_INFO,COMMENT_NAME}from '../queries'
+  POST_LOAD,COMMENT_UPLOAD,COMMENT_DELETE,POST_INFO,COMMENT_NAME,POST_SEARCH}from '../queries'
   
 import { valueFromAST } from 'graphql';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -50,6 +50,8 @@ const textLen = 4000;
 const commentLen = 1000;
 var Datalist
 var snum
+var Searchlist 
+var searchSnum 
 const NOW = new Date();
 const TIMEZONE = NOW.getTimezoneOffset()*60;
 var printsnum = 0;
@@ -120,31 +122,27 @@ const CustomMenu = (props) => { //메뉴 버튼
 
   );
 };
-
-
-const areEqual = (prevProps, nextProps) => {
-  const { isSelected } = nextProps;
-  const { isSelected: prevIsSelected } = prevProps;
   
-  /*if the props are equal, it won't update*/
-  const isSelectedEqual = isSelected === prevIsSelected;
+     
+const areEqual = (prevProps, nextProps) => {
+ // console.log("areequal!!!!!!!!")
 
-  return isSelectedEqual;
+  return ( JSON.stringify(prevProps.post.item) === JSON.stringify(nextProps.post.item));
 };
-
-const Test = React.memo(({post,navigation})=>{
-  console.log("jhhuhuih",post.item.id);
+  
+const Test = React.memo(({post,navigation,search = false})=>{
+  console.log("jhhuhuih",post.index);
   const time = new Date(Number(post.item.createdAt)+TIMEZONE);
   //console.log(time.getDate());
   return(
-    <View>
+    <View> 
     {
     post.item.delete ? (null) : 
     <TouchableOpacity  
     style={styles.card}
-    onPress= {()=>{navigation.navigate("Post",{...post.item, num:post.index,fromhome: false})}}
-     >
-
+    onPress= {()=>{navigation.navigate("Post",{...post.item, num:post.index,fromhome: false,search:search})}}
+     > 
+ 
     <View style={{flexDirection: 'row',justifyContent:'space-between'}}>
 
     <View style={{flexDirection: 'row'}}>
@@ -217,7 +215,7 @@ function GetAllPost({route,navigation}){
       renderItem ={(post)=>{ 
         //console.log("어슈발뭐지??",post);
           return (
-            post == null? (null) : <Test post={post} navigation={navigation}/>
+            post == null? (null) : <Test post={post} navigation={navigation} />
         );
           }}
       windowSize = {2}
@@ -306,12 +304,18 @@ export function Community({route, navigation}){
       headerRight: () => { //새로고침 버튼
         return (
           <View style ={{flexDirection:'row'}}>
-    <TouchableOpacity  style={{alignSelf:'center',marginHorizontal:10}}
-    onPress= {()=>{  printsnum = 0;
-       navigation.navigate("Community",{id:route.params.id, name:route.params.name,needquery: true})}}
-     >
-       <FontAwesome name="refresh" size={24} color="black" />
-     </TouchableOpacity>
+            <TouchableOpacity  style={{alignSelf:'center',marginHorizontal:10}}
+            onPress= {()=>{  printsnum = 0;
+              navigation.navigate("Community",{id:route.params.id, name:route.params.name,needquery: true})}}
+            >
+              <FontAwesome name="refresh" size={24} color="black" />
+            </TouchableOpacity>
+            <TouchableOpacity style={{alignSelf:'center',marginLeft:10}}
+            onPress = {()=>{navigation.navigate("Search",{needreload:false})}}
+            >
+              <FontAwesome name="search" size={24} color="black" />
+            </TouchableOpacity>
+            
             <CustomMenu
               menutext="Menu"
               menustyle={{marginHorizontal: 14}}
@@ -412,7 +416,9 @@ const SetHeader = ({route,navigation,deletePost})=>{ //새로고침,삭제 헤�
 
                   if(route.fromhome) navigation.goBack();
                   else{
-                    Datalist.Array[route.num] = {id:route.id, delete: true}; 
+                    
+                    if(route.search) Searchlist[route.num] ={id:route.id, delete:true} 
+                    else Datalist.Array[route.num] = {id:route.id, delete: true}; 
                     navigation.navigate("Community",{id:Bid,needquery:false})}
                 
                 },
@@ -434,7 +440,11 @@ const SetHeader = ({route,navigation,deletePost})=>{ //새로고침,삭제 헤�
   
        if(route.fromhome) return (<HeaderBackButton onPress={()=>{printsnum = 0;navigation.goBack()}} />);
        return (route.upload == true) ?
-            (<HeaderBackButton onPress={()=>{printsnum = 0;navigation.navigate("Community",{needquery: false})}}/>) 
+            (<HeaderBackButton onPress={()=>{printsnum = 0;
+              if(route.search){
+                console.log("여기가되야하는데..")
+                navigation.navigate("Search",{needreload:true})}
+              else navigation.navigate("Community",{needquery: false})}}/>) 
                     :(<HeaderBackButton onPress={()=>{
                       console.log("해더버튼printsnunm초기화전")
                       printsnum = 0;
@@ -504,12 +514,12 @@ function ViewPost({route,navigation}){//한 Post 다 출력
 
 
 if(!cond ){
-allContent = [{id:route.params.id, UserId: route.params.UserId, 
+allContent = {id:route.params.id, UserId: route.params.UserId, 
               createdAt: route.params.createdAt, text:route.params.text,
               title:route.params.title, num:route.params.num,
               commentLen:route.params.Comment.length,
               User: route.params.User ,
-              __typename:"Post"}];
+              __typename:"Post"};
 allComment = route.params.Comment;
 }
 
@@ -520,13 +530,13 @@ allComment = route.params.Comment;
       <View style={{flex:1}}>
         <SetHeader route={{id: route.params.id , upload: route.params.upload, 
         userId: route.params.UserId, num:route.params.num, 
-        fromhome: route.params.fromhome}}
+        fromhome: route.params.fromhome, search:route.params.search}}
        navigation={navigation} deletePost={deletePost}/>
       {cond?
       <CommentReload route ={{id: route.params.id, userId: route.params.UserId, 
         text:route.params.text, title:route.params.title,
         createdAt : route.params.createdAt, num: route.params.num, fromhome: route.params.fromhome,
-        user : route.params.User
+        user : route.params.User, search:route.params.search
       }}
        deleteComment={deleteComment} navigation ={navigation}/>
       :
@@ -563,16 +573,20 @@ const PrintAllContent = ({deleteComment,navigation}) =>{
   return( 
     <Fragment>
     <FlatList
-    data = {allContent.concat(allComment)}
+    data = {allComment}
     keyExtractor={(post)=>post.createdAt.toString()} 
     renderItem={(post)=>{
       //console.log("가자아아아",post)
       return(
-      post.item.__typename == "Post"?
-      <PostStyle post={post}/> : <CommentContent route={post} deleteComment={deleteComment} navigation={navigation}/>);}
- 
+        <CommentContent post={post} deleteComment={deleteComment} navigation={navigation}/>);}
+  
     } 
-    windowSize={1}
+    windowSize={2}
+    ListHeaderComponent={()=><PostStyle post={{...allContent}}/>}
+    onEndReached={()=>{console.log("끝!!");
+    }}
+
+   onEndReachedThreshold={0.1}
     /> 
     </Fragment>
   );
@@ -599,12 +613,12 @@ const CommentReload = ({route,deleteComment, navigation}) =>{
   console.log(data);
   if(data!=undefined){ //새로고침중 뒤로가기 버튼 눌렀을때 생각.
   allComment = data.seeAllComment 
-  allContent = [{id:route.id, UserId: route.userId, 
+  allContent = {id:route.id, UserId: route.userId, 
     createdAt: route.createdAt, text:route.text,
     title:route.title, num:route.num,
     commentLen:data.seeAllComment.length,
     User: route.user,
-    __typename:"Post"}]; 
+    __typename:"Post"}; 
   //console.log("바뀐Comment정보!!!!!!!!", data)
   if(data.seeAllComment.length != 0 && route.fromhome != true){
   const temp = {UserId : route.userId, __typename:"Post", 
@@ -613,8 +627,8 @@ const CommentReload = ({route,deleteComment, navigation}) =>{
           Comment: data.seeAllComment,
           User: route.user
         };
-  
-  Datalist.Array[route.num] = temp;
+  if(route.search) Searchlist[route.num] = temp;
+  else Datalist.Array[route.num] = temp;
   }
 
   }
@@ -643,7 +657,10 @@ const SearchPost = ({route,navigation,deleteComment}) =>{
   if(error) return(<Text>에러!!{error}</Text>);
  // console.log(data);
   if(data.seePost == null){
-    if(!route.fromhome) Datalist.Array[route.num] = {id:route.id, delete: true};
+    if(!route.fromhome){ 
+      if(route.search) Searchlist[route.num] = {id:route.id, delete: true}
+      else Datalist.Array[route.num] = {id:route.id, delete: true};
+    }
     Alert.alert("삭제된 게시물입니다.")
     return( null );
   }   
@@ -655,7 +672,8 @@ const SearchPost = ({route,navigation,deleteComment}) =>{
     Comment: [],
     User : route.user
   };
-    Datalist.Array[route.num] = temp;
+  if(route.search) Searchlist[route.num] = temp;
+   else Datalist.Array[route.num] = temp;
     }
   }
  
@@ -725,9 +743,9 @@ const CommentInput=({route,upload,navigation})=>
    
 
   
-const CommentContent = React.memo(({route,deleteComment,navigation}) => {
-  console.log("commentcontent");
-  const time = new Date(Number(route.item.createdAt)+TIMEZONE);
+const CommentContent = React.memo(({post,deleteComment,navigation}) => {
+  console.log("commentcontent", post.index);
+  const time = new Date(Number(post.item.createdAt)+TIMEZONE);
   return(
     <View style={styles.card2}>
      <View style={{flexDirection: 'row',justifyContent:'space-between'}}>
@@ -741,10 +759,10 @@ const CommentContent = React.memo(({route,deleteComment,navigation}) => {
       }}
       source={require('../assets/igmyeong.png')} />
     {type == 1 ?
-    <Text style={{fontSize: 15}}>익명</Text> : <Text style={{fontSize: 15}}>{route.item.User.name}</Text>
+    <Text style={{fontSize: 15}}>익명</Text> : <Text style={{fontSize: 15}}>{post.item.User.name}</Text>
     }
       </View>
-      { (check(route.item.UserId))?
+      { (check(post.item.UserId))?
     <Button title="삭제" onPress={()=>
     {           
       
@@ -756,7 +774,7 @@ const CommentContent = React.memo(({route,deleteComment,navigation}) => {
           text: "예",
           onPress: () => {
             printsnum = 0;
-            deleteComment(route.item.id);
+            deleteComment(post.item.id);
             navigation.navigate("Post",{upload: true});
           },
           style: "cancel"
@@ -768,15 +786,15 @@ const CommentContent = React.memo(({route,deleteComment,navigation}) => {
     }}/> : (null)
     }
      </View>
-    <HyperlinkedText style={{fontSize:15}}>{route.item.text}</HyperlinkedText>
+    <HyperlinkedText style={{fontSize:15}}>{post.item.text}</HyperlinkedText>
     <Text style={{fontSize:10}}>{time.getMonth()+1}/{time.getDate()}/{"  "}{time.getHours()}:{time.getMinutes()}</Text>
     </View>
-  );
+  ); 
 },areEqual)
    
 const PostStyle = React.memo(({post}) => {
-  console.log("poststyle!!!");
-  const time = new Date(Number(post.item.createdAt)+TIMEZONE);
+  console.log("poststyle!!!",post);
+  const time = new Date(Number(post.createdAt)+TIMEZONE);
   return(
     <View style={styles.card}>
     <View style={{flexDirection: 'row',justifyContent:'space-between'}}>
@@ -790,17 +808,17 @@ const PostStyle = React.memo(({post}) => {
       }} 
       source={require('../assets/igmyeong.png')} />
         {type == 1 ?
-    <Text style={{fontSize: 15}}>익명</Text>:<Text style={{fontSize:15}}>{post.item.User.name}</Text> 
+    <Text style={{fontSize: 15}}>익명</Text>:<Text style={{fontSize:15}}>{post.User.name}</Text> 
   }
       </View>
       <Text style={{fontSize: 10}}> {time.getMonth()+1}/{time.getDate()}/{"  "}{time.getHours()}:{time.getMinutes()}</Text>
     </View>
-      <Text style={{fontSize : 25}}>{post.item.title}{"\n"}</Text>
-      <HyperlinkedText style={{fontSize : 20}} >{post.item.text}</HyperlinkedText>
+      <Text style={{fontSize : 25}}>{post.title}{"\n"}</Text>
+      <HyperlinkedText style={{fontSize : 20}} >{post.text}</HyperlinkedText>
  
       <View style={{flexDirection:'row',marginTop:5}}>
       <FontAwesome name="comment-o" size={10} color='blue' />
-      <Text style={{fontSize:10,marginLeft:10}}>{post.item.commentLen}</Text>
+      <Text style={{fontSize:10,marginLeft:10}}>{post.commentLen}</Text>
       </View>
     </View>
   );
@@ -882,7 +900,7 @@ const UpdateScreen = ({navigation, upload})=>{
         { cancelable: true }
       );
     }   
-  }} />
+  }} /> 
   </View > 
   <View style={{margin:10}}>
   <TextInput 
@@ -916,7 +934,186 @@ const UpdateScreen = ({navigation, upload})=>{
   );
 }
 
+export function Search ({route,navigation}){
+
+  if(!route.params.needreload){
+    Searchlist = [];
+    searchSnum = 0;
+  }
+  console.log("search진입")
+  const userInfo = React.useContext(UserContext);
+  const client = new ApolloClient({
+    uri: "http://52.251.50.212:4000/",
+    cache: new InMemoryCache(),
+    headers: {
+       Authorization: `Bearer ${userInfo.token}`
+      },
+  })
+  return(
+  <ApolloProvider client={client}>
+
+  <InitSearch initstate={route.params.needreload} navigation={navigation}/>
+  </ApolloProvider>
+);
+
+}
+
+
+var getData = false;
+export function InitSearch ({init,initstate,navigation}){
+  console.log("InitSearch")
+  const [text, setText] = useState("")
+  const [state, setState] = useState(initstate);
  
+  //console.log("setstate!!!!!!",state)
+  return (<View style={{flex:1,marginTop:'14%',marginHorizontal:5}}>
+    <View style={{justifyContent:'flex-start'}}>
+    <SearchInput needreload={initstate} init="" setState={setState} setParentText={setText} navigation={navigation}/>
+    </View>
+    <View style={{marginTop:15}}>
+    {state ? 
+      getData ? 
+      <InitPrintSearch text={text} navigation={navigation}/>:<GetAllSearch text={text} navigation={navigation} />
+    :<View style={{marginTop:'70%',alignItems:'center'}}>
+      <Text style={{fontSize:30,color:'gray'}} >
+        게시판의 글을 검색해보세요.
+      </Text>
+      </View>}
+    </View>
+  </View>)
+
+}
+
+
+const SearchInput = ({needreload,init,setState,setParentText,navigation})=>{
+  
+  const [text, setText] = useState(init)
+  
+  return( <View style={{flexDirection:'row'}}>
+    <TouchableOpacity style={{flex:0.1, alignItems:'center'}}
+    onPress={()=>{
+      searchSnum=0; Searchlist=[];
+
+      if(needreload) navigation.navigate("Community",{needquery:true})
+      else navigation.goBack()}
+      }>
+    <Ionicons name="arrow-back" size={24} color="black" />
+
+      </TouchableOpacity>
+  <TextInput
+  style={{flex:1, backgroundColor : 'gainsboro',fontSize:24}}
+     placeholder="글, 제목"
+     onChangeText={(val)=>setText(val)
+    
+    }
+    maxLength={1000}
+      /> 
+  <TouchableOpacity 
+  style={{flex:0.1,alignItems:'center'}}
+   onPress={()=>{
+    //console.log("------------------------",route)
+    var temp = text.trim()
+    if(temp.length <2){
+      Alert.alert("두 글자 이상 입력해주세요","")
+    }
+    else{
+    getData = true;
+    setState(true); 
+    setParentText(text);
+    Searchlist = [];
+    searchSnum = 0;
+    }
+  }} >
+    <FontAwesome name="search" size={24} color="black" />
+  </TouchableOpacity>
+     </View> );
+}
+
+const InitPrintSearch = ({text,navigation}) =>{
+  console.log("InitPrintSearch@@@@@@@@@@@@@")
+  getData = false;
+  const {loading, error, data} = useQuery(POST_SEARCH,{
+    variables: {bid: Bid, snum: 0, tnum: tnum, text:text}
+  }); 
+  if(loading)return <ActivityIndicator color="#1478FF"/>
+  if(error)return <Text>에러!!</Text>
+
+ 
+  //console.log(data.searchPost)
+  for(var i=0; i<data.searchPost.length; i++)
+    Searchlist.push(data.searchPost[i])
+  snum += Searchlist.length;
+  console.log("now searchlist",Searchlist)
+  searchSnum += Searchlist.length;
+   
+  return (
+    <GetAllSearch text={text} navigation={navigation}/>
+  );
+
+}  
+
+const GetAllSearch = ({text,navigation}) =>{
+  console.log("getAllsearch!!!@@@@@@",Searchlist)
+  const [ 
+    fetch, 
+    { loading, data }
+  ] = useLazyQuery(POST_SEARCH,{
+    variables: {bid: Bid, snum: searchSnum, tnum: tnum,text: text}
+
+});
+
+if(data!=undefined){
+  //console.log("@@@@@fetchnew!!!!!!")
+  for(var i=0; i<data.searchPost.length; i++)
+    Searchlist.push(data.searchPost[i]);
+  searchSnum += data.searchPost.length;
+  //console.log(Datalist.Array.length)
+}
+   
+return(  
+    <FlatList
+    keyExtractor={(post) => post.id.toString()}
+    data = {Searchlist} 
+    renderItem ={(post)=>{ 
+      //console.log("어슈발뭐지??",post);
+        return (
+          post == null? (null) : <Test post={post} navigation={navigation} search={true}/>
+      );
+        }}
+    windowSize = {2}
+        onEndReached={()=>{console.log("끝!!"); 
+         // console.log(data)
+          if(data == undefined) fetch()
+          else{
+            if(data.searchPost.length != 0 ){ 
+              console.log("외왆돼")
+              fetch(); }
+          }
+          }} 
+
+    onEndReachedThreshold={0.1}
+    ListFooterComponent={
+      Searchlist.length != 0 ?
+              data == undefined?
+              <ActivityIndicator color="#1478FF"/>
+            :
+            data.searchPost.length == 0? 
+              (null) :<ActivityIndicator color="#1478FF"/> 
+      :<View style={{marginTop:'70%',alignItems:'center'}}>
+      <Text style={{fontSize:30,color:'gray'}} >
+        해당하는 글이 없습니다.
+      </Text>
+      </View>
+    
+  }
+
+  bounces ={false}
+    />
+);
+
+
+}
+
 const styles = StyleSheet.create({
   card: {
     backgroundColor: "white",

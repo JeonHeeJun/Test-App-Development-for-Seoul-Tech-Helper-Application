@@ -338,4 +338,29 @@ export const GET_START_DATE = gql`
       startDate
     }
   }
-`
+`;
+
+export const POST_SEARCH = gql`
+query searchpost($bid:Int!, $snum:Int!, $tnum:Int!, $text:String!){  
+  searchPost(boardId:$bid, skipNum:$snum, takeNum:$tnum, text:$text){
+    id
+    title
+    text 
+    UserId
+    createdAt
+    Comment{
+      id
+      text
+      createdAt
+      UserId
+    }
+    User{
+      name
+    }
+  }
+   
+}
+
+
+
+`;

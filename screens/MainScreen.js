@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useCallback } from 'react';
 import { StyleSheet, Text, View, Modal, TouchableOpacity, ActivityIndicator,FlatList } from 'react-native';
 import {Header} from 'react-native-elements';
 import { ApolloClient, ApolloProvider, InMemoryCache, useQuery } from "@apollo/client";
@@ -14,10 +14,10 @@ import AccountScreen from './AccountScreen';
 import HomeScreen from './HomeScreen';
 import {KeepScreen, KeepUpload} from './KeepScreen';
 import ScheduleStackScreen from './ScheduleStackScreen';
-import {Community,Post,Upload,UploadHeader}from "./MainContent"
+import {Community,Post,Upload,UploadHeader,Search}from "./MainContent"
 
 import { WebView } from 'react-native-webview';
-import { useIsFocused } from '@react-navigation/native'
+import { useIsFocused,getFocusedRouteNameFromRoute } from '@react-navigation/native'
 import {
   AdMobBanner,
   AdMobInterstitial,
@@ -26,47 +26,81 @@ import {
 import {SEE_BOARD} from '../queries'
 const Tab = createBottomTabNavigator();
 
+const areEqual = (prevProps, nextProps) => {
+  //console.log("areequal!!!!!!!!!!!!!!!!1",nextProps.memo.index, JSON.stringify(prevProps.memo.item.checklist),JSON.stringify(nextProps.memo.item.checklist))
+  return (JSON.stringify(prevProps.board.item) === JSON.stringify(nextProps.board.item)
+  &&
+  prevProps.board.index === nextProps.board.index
+  );
+ 
+}  
+
+const BoardItem = React.memo(({board,navigation})=>{ 
+  //console.log("어슈발뭐지??",post);
+
+    return (
+      <TouchableOpacity  style={styles.card}
+      onPress={()=>{navigation.navigate("Community",{id: board.item.id, name:board.item.name,type:board.item.type, needquery:true})}} >
+    
+        <Text style={{fontSize:20}}>{board.item.name}</Text>
+      </TouchableOpacity>
+  );
+    },areEqual)
+
 const MoveBoard = ({navigation})=>{ //추가
   const {loading, error, data} = useQuery(SEE_BOARD,{
     fetchPolicy: "no-cache"
   });
   if(loading)return <ActivityIndicator color="#1478FF"/>
   if(error)return <Text>에러!!</Text>
-  console.log(data)
+  //console.log(data)
   return (
     <FlatList
       keyExtractor={(board) => board.id.toString()}
       data = {data.seeAllBoard} 
-      renderItem ={(board)=>{ 
-        //console.log("어슈발뭐지??",post);
-      
-          return (
-            <TouchableOpacity  style={styles.card}
-            onPress={()=>{navigation.navigate("Community",{id: board.item.id, name:board.item.name,type:board.item.type, needquery:true})}} >
-          
-              <Text style={{fontSize:20}}>{board.item.name}</Text>
-            </TouchableOpacity>
-        );
-          }}
+      renderItem ={(board)=>{
+        return <BoardItem board={board} navigation={navigation}/>
+      }}
       windowSize = {2}
+      onEndReached={()=>{//console.log("끝!!");
+
+    }}
+ 
+   onEndReachedThreshold={0.1}
       />
   );
 
 }
   
+function useForceUpdate() {
+  const [, setTick] = useState(0);
+  const update = useCallback(() => {
+    setTick(tick => tick + 1);
+  }, [])
+  return update;
+}
+
 const MainContent = ({navigation}) => {//변경
+  const update = useForceUpdate();
+  const userInfo = React.useContext(UserContext);
   const client = new ApolloClient({
     uri: "http://52.251.50.212:4000/",
     cache: new InMemoryCache(),
+    headers: { 
+       Authorization: `Bearer ${userInfo.token}`
+      },
   })
-  const isFocused = useIsFocused();
+  useEffect(()=>{
+    const unsubscribe = navigation.addListener('focus', () => {
+      update();
+    });
+    return unsubscribe;
+  },[navigation])
+
   return(
-    isFocused ? 
     <ApolloProvider client = {client}>
       <MoveBoard navigation={navigation}/>
   </ApolloProvider>
-  :
-  <View></View>
   );
 
 }
@@ -129,6 +163,7 @@ export default function MainScreen(){
           <Stack.Screen name="Community" component={Community} />
           <Stack.Screen name="Post" component={Post} /> 
           <Stack.Screen name="Upload" component={Upload} options={{headerShown: false}} />
+          <Stack.Screen name="Search" component={Search} options={{headerShown: false}} />
           <Stack.Screen name="계정" component={AccountScreen}/>
           <Stack.Screen name="WebviewLMS" component={WebviewLMS}/>
           <Stack.Screen name="WebviewHome" component={WebviewHome}/>
@@ -141,9 +176,10 @@ export default function MainScreen(){
 
 
 
-export function DefaultScreen({navigation}) {
+export function DefaultScreen({route,navigation}) {
     const user_meta = React.useContext(IdContext);
-        
+    //const routeName = getFocusedRouteNameFromRoute(route)
+   // console.log("Default11!1!!!!!!!!!!!!!!!!!!!1",routeName)
     return (
         <>
           {
@@ -180,6 +216,7 @@ export function DefaultScreen({navigation}) {
 
  
           <Tab.Navigator
+            
             screenOptions={({ route }) => ({
               tabBarIcon: ({ focused, color, size }) => {
                 let iconName;
