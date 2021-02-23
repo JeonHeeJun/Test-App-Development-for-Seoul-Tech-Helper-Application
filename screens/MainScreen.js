@@ -35,19 +35,27 @@ const areEqual = (prevProps, nextProps) => {
  
 }  
 
+var boardTouch = false;
 const BoardItem = React.memo(({board,navigation})=>{ 
-  //console.log("어슈발뭐지??",post);
-
+  //console.log("어슈발뭐지??",boardTouch);
+  const update = useForceUpdate();
     return (
       <TouchableOpacity  style={styles.card}
-      onPress={()=>{navigation.navigate("Community",{id: board.item.id, name:board.item.name,type:board.item.type, needquery:true})}} >
-    
+      onPress={()=>{
+        boardTouch = true;
+        update();
+        navigation.navigate("Community",{id: board.item.id, name:board.item.name,
+        type:board.item.type, needquery:true})}}
+      disabled={boardTouch}
+      >
+      
         <Text style={{fontSize:20}}>{board.item.name}</Text>
       </TouchableOpacity>
   );
     },areEqual)
 
 const MoveBoard = ({navigation})=>{ //추가
+  boardTouch = false;
   const {loading, error, data} = useQuery(SEE_BOARD,{
     fetchPolicy: "no-cache"
   });
