@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 10,
     marginHorizontal: 10,
-    borderStyle:"dashed", 
+    //borderStyle:"dashed", 
     borderWidth:1,
     padding:10,
     width: "80%",

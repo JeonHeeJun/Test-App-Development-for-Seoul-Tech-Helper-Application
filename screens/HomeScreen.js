@@ -339,7 +339,7 @@ function Main({navigation}){
         <View style={styles.webview}>
           <TouchableOpacity onPress={()=>openPORTAL()}>
             {<Image source={require('../assets/portal_link.png')} resizeMode="stretch"/>}
-            <Text style={styles.webviewText}>통합정보시스템</Text>
+            <Text style={styles.webviewText}>대학포털</Text>
           </TouchableOpacity>
         </View>
       </View>

@@ -12,9 +12,9 @@ import {
   AdMobInterstitial,
 } from 'expo-ads-admob';
 
-const adUnitID = "ca-app-pub-8233357974153609/1707547735";
+const AD_ID = Platform.OS === 'ios'? "ca-app-pub-8233357974153609/2214173566" : "ca-app-pub-8233357974153609/1707547735"
 const colors = [
-  "#AFFFEE", "#00F5FF", "#FFE4E1", "#FFFF96" , "#FFDAB9", "#FAC6C6", "#82F9B7"
+  "#AFFFEE", "#00F5FF", "#FFE4E1", "#FFFF96" , "#FFDAB9", "#FAC6C6", "#82F9B7" ,"#FAEBD7"
 ]
 let colorIndex = 0;
 let colorMap = {};
@@ -481,7 +481,7 @@ export default function ScheduleScreen({navigation}) {
     if(isFocused){
       // 시간표 탭에 돌아올 때마다 5초 전면 광고 
       if(user_meta.grade >= 2){  // 유저 등급이 0,1이 아니라면 발생     
-        AdMobInterstitial.setAdUnitID(adUnitID).then(()=>{
+        AdMobInterstitial.setAdUnitID(AD_ID).then(()=>{
           AdMobInterstitial.requestAdAsync().then(()=>AdMobInterstitial.showAdAsync());
         });
       }

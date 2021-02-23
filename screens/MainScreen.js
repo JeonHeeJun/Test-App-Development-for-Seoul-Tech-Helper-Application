@@ -1,5 +1,5 @@
 import React, { useState, useEffect,useCallback } from 'react';
-import { StyleSheet, Text, View, Modal, TouchableOpacity, ActivityIndicator,FlatList } from 'react-native';
+import { StyleSheet, Text, View, Modal, TouchableOpacity, ActivityIndicator,FlatList, Platform } from 'react-native';
 import {Header} from 'react-native-elements';
 import { ApolloClient, ApolloProvider, InMemoryCache, useQuery } from "@apollo/client";
 
@@ -24,6 +24,10 @@ import {
 } from 'expo-ads-admob';
 
 import {SEE_BOARD} from '../queries'
+
+const AD_ID_INTERS = Platform.OS === 'ios'? "ca-app-pub-8233357974153609/2214173566" : "ca-app-pub-8233357974153609/1707547735"
+const AD_ID_BANNER = Platform.OS === 'ios'? "ca-app-pub-8233357974153609/3291102463" : "ca-app-pub-8233357974153609/8459668669"
+
 const Tab = createBottomTabNavigator();
 
 const areEqual = (prevProps, nextProps) => {
@@ -157,7 +161,7 @@ export default function MainScreen(){
   let id = data.findUserbyName[0].id
   let grade = data.findUserbyName[0].grade
   if(grade >= 2){
-    AdMobInterstitial.setAdUnitID("ca-app-pub-8233357974153609/1707547735").then(()=>{
+    AdMobInterstitial.setAdUnitID(AD_ID_INTERS).then(()=>{
       AdMobInterstitial.requestAdAsync().then(()=>AdMobInterstitial.showAdAsync());
     });
   }
@@ -167,7 +171,7 @@ export default function MainScreen(){
         <IdContext.Provider value = {temp} >
 
         <Stack.Navigator>
-          <Stack.Screen name="default" component={DefaultScreen} options={{headerShown: false}}/>
+          <Stack.Screen name="홈므로" component={DefaultScreen} options={{headerShown: false}}/>
           <Stack.Screen name="Community" component={Community} />
           <Stack.Screen name="Post" component={Post} /> 
           <Stack.Screen name="Upload" component={Upload} options={{headerShown: false}} />
@@ -214,7 +218,7 @@ export function DefaultScreen({route,navigation}) {
               user_meta.grade>1?
               <AdMobBanner
                 style={styles.adcard}
-                adUnitID="ca-app-pub-8233357974153609/8459668669" // Test ID, Replace with your-admob-unit-id
+                adUnitID={AD_ID_BANNER} // Test ID, Replace with your-admob-unit-id
                 servePersonalizedAds // true or false
                 onDidFailToReceiveAdWithError={this.bannerError} 
               />
@@ -258,36 +262,6 @@ export function DefaultScreen({route,navigation}) {
         </>
     );
 }
-
-
-function AD(){
-  const [showAD, setShowAD] = React.useState(true);
-  return(
-    <Modal
-      animationType="slide"
-      transparent={true}
-      visible={showAD}
-      onRequestClose={() => {
-        Alert.alert('Modal has been closed.');
-      }}>
-      <View style={{justifyContent:"center", flex:1}}>
-        <AdMobBanner
-          style={styles.adcard}
-          bannerSize="mediumRectangle"
-          adUnitID="ca-app-pub-8233357974153609/1707547735" // Test ID, Replace with your-admob-unit-id
-          servePersonalizedAds // true or false
-          onDidFailToReceiveAdWithError={this.bannerError} />
-        
-        <TouchableOpacity style={styles.adButton} onPress={()=>{
-          setShowAD(false);
-        }}><Text style={{fontSize:20, color:"white"}}>닫기</Text>
-        </TouchableOpacity>
-      </View>
-    </Modal>
-  )
-}
-
-
 
 const styles = StyleSheet.create({
     card2: {

@@ -411,7 +411,6 @@ export default function AccountScreen(){
       alignItems: 'center',
       marginVertical: 10,
       marginHorizontal: 10,
-      borderStyle:"dashed", 
       borderWidth:1,
       padding:10,
       width: "80%",
