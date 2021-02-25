@@ -29,15 +29,15 @@ const AD_ID_INTERS = Platform.OS === 'ios'? "ca-app-pub-8233357974153609/2214173
 const AD_ID_BANNER = Platform.OS === 'ios'? "ca-app-pub-8233357974153609/3291102463" : "ca-app-pub-8233357974153609/8459668669"
 
 const Tab = createBottomTabNavigator();
-
+ 
 const areEqual = (prevProps, nextProps) => {
   //console.log("areequal!!!!!!!!!!!!!!!!1",nextProps.memo.index, JSON.stringify(prevProps.memo.item.checklist),JSON.stringify(nextProps.memo.item.checklist))
   return (JSON.stringify(prevProps.board.item) === JSON.stringify(nextProps.board.item)
   &&
   prevProps.board.index === nextProps.board.index
   );
- 
-}  
+  
+}   
 
 var boardTouch = false;
 const BoardItem = React.memo(({board,navigation})=>{ 
@@ -49,7 +49,7 @@ const BoardItem = React.memo(({board,navigation})=>{
         boardTouch = true;
         update();
         navigation.navigate("Community",{id: board.item.id, name:board.item.name,
-        type:board.item.type, needquery:true})}}
+        type:board.item.type,needquery:true})}}
       disabled={boardTouch}
       >
       
@@ -169,11 +169,11 @@ export default function MainScreen(){
     //console.log("temp",temp);
       return ( 
         <IdContext.Provider value = {temp} >
-
+ 
         <Stack.Navigator>
           <Stack.Screen name="홈므로" component={DefaultScreen} options={{headerShown: false}}/>
           <Stack.Screen name="Community" component={Community} />
-          <Stack.Screen name="Post" component={Post} /> 
+          <Stack.Screen name="Post" component={Post}  /> 
           <Stack.Screen name="Upload" component={Upload} options={{headerShown: false}} />
           <Stack.Screen name="Search" component={Search} options={{headerShown: false}} />
           <Stack.Screen name="계정" component={AccountScreen}/>

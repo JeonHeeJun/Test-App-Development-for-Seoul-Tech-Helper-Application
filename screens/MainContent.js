@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useContext,useRef, useCallback,Fragment } from 'react';
-
+import React, { useState, useEffect, useContext,useRef, useCallback,Fragment,PureComponent } from 'react';
+import { debounce } from "lodash";
 import { StyleSheet, Text, View, Button,ScrollView,TouchableOpacity, Image,
-  RefreshControl,TextInput,Alert,FlatList,KeyboardAvoidingView,ActivityIndicator,Keyboard,TouchableHighlight } from 'react-native';
+  RefreshControl,TextInput,Alert,FlatList,KeyboardAvoidingView,ActivityIndicator,Keyboard,TouchableHighlight,Platform } from 'react-native';
 import {colors, Header} from 'react-native-elements';
 import { ApolloClient, ApolloProvider, InMemoryCache, useQuery,useLazyQuery , createHttpLink, useMutation} from "@apollo/client";
 import Modal from 'react-native-modal'
-
+//import {useMutation as classMutation} from '@apollo/react-components'
 import { Appbar } from 'react-native-paper';
 import { createNavigatorFactory, NavigationContainer, useNavigationBuilder } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -14,12 +14,13 @@ import { createStackNavigator,HeaderBackButton } from '@react-navigation/stack';
 import { Ionicons, FontAwesome, AntDesign,Feather  } from '@expo/vector-icons';
 import { AuthContext, UserContext,IdContext } from '../components/context';
 import AsyncStorage from '@react-native-community/async-storage';
-
+//import Func from './MainContentSub/'
+  
 import HomeScreen from './HomeScreen'; 
 import ScheduleScreen from './ScheduleScreen';
 import {SEE_ALL_POSTERS,POST_VIEW,POST_UPLOAD,POST_DELETE,
   POST_LOAD,COMMENT_UPLOAD,COMMENT_DELETE,POST_INFO,COMMENT_NAME,POST_SEARCH}from '../queries'
-  
+   
 import { valueFromAST } from 'graphql';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { ScreenStackHeaderLeftView } from 'react-native-screens';
@@ -39,6 +40,8 @@ import {
 const adUnitID_ios = "ca-app-pub-8233357974153609/3291102463";
 const adUnitID_android =  "ca-app-pub-8233357974153609/8459668669";
 
+
+const AD_ID_BANNER = Platform.OS === 'ios'? "ca-app-pub-8233357974153609/3291102463" : "ca-app-pub-8233357974153609/8459668669"
 var Bid//보드 아이디
 var Uid// 유저 정보(id, grade)
 var tnum = 40//게시글/댓글 불러오는 수
@@ -95,7 +98,7 @@ const CustomMenu = (props) => { //메뉴 버튼
               <Modal isVisible={isModalVisible}>
         <TouchableOpacity style={styles.card} onPress={()=>{tnum =20 ; menuTouch = true;
           setModalVisible(false);props.navigation.navigate("Community",{needquery:true})}}
-          >
+          > 
         <Text style={{alignSelf: 'center'}}>20</Text>
         </TouchableOpacity> 
         <TouchableOpacity style={styles.card} onPress={()=>{tnum =40 ; setModalVisible(false);props.navigation.navigate("Community",{needquery:true})}}>
@@ -125,42 +128,46 @@ const CustomMenu = (props) => { //메뉴 버튼
 
   );
 };
-   
      
+  
+const areEqual_ = (prevProps, nextProps)=>{
+  //console.log("areequal!!!!!!!!!",JSON.stringify(prevProps.post.item) === JSON.stringify(nextProps.post.item))
+  return ( JSON.stringify(prevProps.post.item) === JSON.stringify(nextProps.post.item) );
+
+}
+       
 const areEqual = (prevProps, nextProps) => {
- //console.log("areequal!!!!!!!! ",nextProps.post.item.id, curPost )
- var check = -1;
- 
-  if(curPost != -1) {
-    check = curPost;
-    if(prevProps.post.item.id == check) curPost = -1;
-  } 
-  return ( JSON.stringify(prevProps.post.item) === JSON.stringify(nextProps.post.item) && check != prevProps.post.item.id);
+
+  return ( JSON.stringify(prevProps.post.item) === JSON.stringify(nextProps.post.item) );
 };
      
-var postTouch = false;
-var curPost = -1;
+//var postTouch = false;
+
+
+
 const Test = React.memo(({post,navigation,search = false})=>{
-  
- // console.log("jhhuhuih",post.item.id);
+  if(post == null) return (null);
+ // console.log("jhhuhuih",post.index);
   //console.log("mytoch",postTouch);
   const update = useForceUpdate();
   const time = new Date(Number(post.item.createdAt)+TIMEZONE);
- 
+  
+  const goDebounce = useCallback(debounce(()=>{
+    navigation.navigate("Post",{...post.item, num:post.index,fromhome: false,search:search, upload:false})
+  },100));
   ////console.log(time.getDate());
   return(
     <View> 
-    {
+    { 
     post.item.delete ? (null) : 
     <TouchableOpacity   
+ 
 
-    disabled={postTouch}
     style={styles.card}
     onPress= {()=>{ 
-      postTouch = true;
-      curPost = post.item.id
-      update();
-      navigation.navigate("Post",{...post.item, num:post.index,fromhome: false,search:search})}}
+      //postTouch = true;
+      //curPost = post.item.id
+      goDebounce();}}
      > 
     <View style={{flexDirection: 'row',justifyContent:'space-between'}}>
 
@@ -192,13 +199,15 @@ const Test = React.memo(({post,navigation,search = false})=>{
 
   ); 
 
-},areEqual);
+},areEqual_);
  
 
+    
 var refreshing = false
-function GetAllPost({route,navigation}){
-   
-  //console.log("GetAllPost진입@@@@@@@@@@@@@@")
+var init = true;
+function GetAllPost({needquery,navigation}){
+  const update = true;
+ // console.log("GetAllPost진입@@@@@@@@@@@@@@",init)
   ////console.log("@@@@",Datalist)
   //var scroll = 0; 
   //if(!route.params.needquery) scroll = Datalist.scroll;
@@ -211,12 +220,13 @@ function GetAllPost({route,navigation}){
   ] = useLazyQuery(POST_LOAD,{
     variables: {bid: Bid, snum: snum, tnum: tnum}
 });
- 
+
   if(data!=undefined){
     //console.log("@@@@@fetchnew!!!!!!")
     for(var i=0; i<data.loadPost.length; i++)
       Datalist.Array.push(data.loadPost[i]);
-      snum+=tnum ;
+    snum+=tnum ;
+
     ////console.log(Datalist.Array.length)
   }
 
@@ -225,48 +235,53 @@ function GetAllPost({route,navigation}){
     wait(10).then(() =>{ refreshing = false;
         navigation.navigate("Community",{needquery: true})});
   }
-
+    
   return(  
+    
     <View style={{flex:1}}> 
+
       <FlatList
       keyExtractor={(post) => post.id.toString()}
       data = {Datalist.Array} 
-      renderItem ={(post)=>{ 
+      renderItem ={(post)=>{
         ////console.log("어슈발뭐지??",post);
-          return (
-            post == null? (null) : <Test post={post} navigation={navigation} />
-        );
-          }}
+          return( <Test post={post} navigation={navigation} />);
+      }
+        }  
       windowSize = {2}
+         
           onEndReached={()=>{////console.log("끝!!"); 
-
+            //console.log(" 왜안되냐고")
             if(data == undefined) fetch()
             else{
               if(data.loadPost.length != 0 ) fetch();
             }
-            }}
- 
+            }}      
       onEndReachedThreshold={0.1}
+
       ListFooterComponent={
-        Datalist.Array.length != 0 ?
+        Datalist.Array.length != 1 ?
                 data == undefined?
                 <ActivityIndicator color="#1478FF"/>
               :
               data.loadPost.length == 0? 
                 (null) :<ActivityIndicator color="#1478FF"/> 
-        :<View style={{marginTop:'50%',alignItems:'center'}}>
-        <Feather name="alert-circle" size={50} color="gray" />
-        <Text style={{fontSize:20,color:'gray'}} >
-          아직 등록된 글이 없습니다.
-        </Text>
-  
-        </View>
-      
+        : data == undefined ?
+          <ActivityIndicator color="#1478FF"/>
+          :
+          data.loadPost.length == 0?
+          <View style={{marginTop:'50%',alignItems:'center'}}>
+          <Feather name="alert-circle" size={50} color="gray" />
+          <Text style={{fontSize:20,color:'gray'}} >
+            아직 등록된 글이 없습니다.
+          </Text>
+          </View>:(null)
+           
     }
- 
     bounces ={false}
     refreshControl={<RefreshControl refreshing={refreshing} onRefresh ={onRefresh}/>}
       />
+    
       <View style={{borderWidth:1,position:'absolute',bottom:10,alignSelf:'center'}}>
       {type == 0 ?
       Uid.grade == 0 ? <UploadPostButton navigation={navigation}/> : (null)
@@ -274,15 +289,14 @@ function GetAllPost({route,navigation}){
       <UploadPostButton navigation={navigation}/>
     }
       </View>
-      </View>
+    </View>
   );
   
 }
 
 
-
+/*
 const IinitialPost =({navigation})=>{
-  
   ////console.log("@@@@@@@@@inital")
   const {loading, error, data} = useQuery(POST_LOAD,{
     variables: {bid: Bid, snum: 0, tnum: tnum}
@@ -295,14 +309,14 @@ const IinitialPost =({navigation})=>{
   snum += tnum;
    
   return (
-    <GetAllPost  navigation={navigation} />
+    <GetAllPost navigation={navigation}/>
   );
 
-}
-  
+}*/
+
  
 export function Community({route, navigation}){
- // //console.log("Commnufdisufdfs",route);
+ //console.log("Commnufdisufdfs",route);
  //if(route.params.fromhome) 
   const userInfo = React.useContext(UserContext);
   const client = new ApolloClient({
@@ -312,6 +326,7 @@ export function Community({route, navigation}){
        Authorization: `Bearer ${userInfo.token}`
       },
   })
+  init = false;
   const Id =useContext(IdContext)
   Uid = Id
   Bid = route.params.id
@@ -319,11 +334,13 @@ export function Community({route, navigation}){
   allContent = null;
   type = route.params.type
   if(route.params.needquery){ 
+    init = true;
     snum = 0;
-    Datalist = {Array:[], scroll:0};
+    Datalist = {Array:[{id:-1,delete:true}], scroll:0};
   }
    
   React.useLayoutEffect(() => {
+    
     navigation.setOptions({
  
       headerRight: () => { //새로고침 버튼
@@ -351,7 +368,7 @@ export function Community({route, navigation}){
               navigation={navigation}
             />
             </View>
-          ) 
+          )  
         },  
       headerTitle: ()=>(<Text style ={{fontSize:20}}>{route.params.name}</Text>) //커뮤니티 타이틀바꾸기
       
@@ -365,21 +382,19 @@ export function Community({route, navigation}){
     {Uid.grade == 2 || Uid.grade == 3 ?
        <AdMobBanner
    style={styles.adcard}
-   adUnitID={adUnitID_android} // Test ID, Replace with your-admob-unit-id
+   adUnitID={AD_ID_BANNER} // Test ID, Replace with your-admob-unit-id
    servePersonalizedAds // true or false
   onDidFailToReceiveAdWithError={this.bannerError} 
     /> : (null)}
-    {route.params.needquery ?
-    <IinitialPost navigation={navigation} /> : <GetAllPost navigation={navigation}/>
-  }
+ <GetAllPost needquery={route.params.needquery} navigation={navigation}/>
   </ApolloProvider>
    );
   
 }  
  
 export function Post({route,navigation}){
-  postTouch = false;
-  //console.log("------------Post----");
+  //postTouch = false;
+  //console.log("------------Post------",route);
     const userInfo = React.useContext(UserContext);
     if(route.params.fromhome) type = 0;
     const client = new ApolloClient({
@@ -426,13 +441,14 @@ export function Post({route,navigation}){
         }
     } );
 
-     
+         
     React.useLayoutEffect(() => {
       //console.log("header layouteffect-------------------")
+    // console.log("헤더들감")
       navigation.setOptions({ 
   
         headerRight: () => {
-     
+       
           return (
           <View style={{flexDirection:'row'}} >
       <TouchableOpacity  style={{alignSelf:'center',marginHorizontal:10}}
@@ -449,7 +465,7 @@ export function Post({route,navigation}){
               "글을 삭제하시겠습니까?",
               "",
               [
-                {
+                { 
                   text: "예",
                   onPress: () => {
                     printsnum = 0;
@@ -481,7 +497,7 @@ export function Post({route,navigation}){
             }
             </View>
             </View>)}, 
-   
+    
          headerLeft :()=>{////console.log("정신나갈거같에정시난갈거같에정신",route.upload)
     
          if(route.fromhome) return (<HeaderBackButton onPress={()=>{printsnum = 0;navigation.goBack()}} label="홈으로"/>);
@@ -495,19 +511,19 @@ export function Post({route,navigation}){
                         //console.log("해더버튼printsnunm초기화전")
                         printsnum = 0;
                         //console.log("초기화 후")
-                        navigation.navigate("Community",{needquery:false})
+                        navigation.goBack()
                         }} />)
                     }
-        
-     } );  
-       }, [navigation,route]);
+          
+     } );   
+       }, [navigation,route.upload]); 
   
-
+ 
        
-       return ((null));
+       return  (null);
   
   }
-      
+       
 
 
 function ViewPost({route,navigation}){//한 Post 다 출력
@@ -553,42 +569,36 @@ allComment = route.params.Comment;
         }}
          navigation ={navigation}/>
         }   
-
-    <View style={{justifyContent:'flex-end',margin:10}}>
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === "ios" ? "padding" : "height"}>
-       <CommentInput  route={{id: route.params.id, upload: route.params.upload, prevent:false}} navigation ={navigation}/>
-     
-    </KeyboardAvoidingView>
-    </View>
-    
+      <View style={{justifyContent:'flex-end',margin:10}}>
+      <CommentInput  route={{id: route.params.id}} navigation ={navigation}/>
+  </View>
   </View>);
-}  
-     
+}      
+         
+
+
 //<CommentInput  route={{id: route.params.id}} upload = {uploadComment} navigation ={navigation}/>
-const PrintAllContent = ({deleteComment,navigation}) =>{
+const PrintAllContent = ({navigation}) =>{
  
   if(allComment == undefined || allContent == undefined) return (null);
   ////console.log("print!!!!!!!!!!!", allComment.length, printsnum);
   ////console.log("beforeallcontent!!!!!!!",allContent.length,"printsum",printsnum)
-
   ////console.log("print!!!!!!!!!!!", allContent.length);
+  
+
   return( 
     <Fragment>
     <FlatList
     data = {allComment}
     keyExtractor={(post)=>post.createdAt.toString()} 
-    renderItem={(post)=>{
-      ////console.log("가자아아아",post)
-      return(
-        <CommentContent post={post}  navigation={navigation}/>);}
-  
+    renderItem={(post) =>
+     <CommentContent post={post} navigation={navigation}/>
     } 
     windowSize={2}
     ListHeaderComponent={()=><PostStyle post={{...allContent}}/>}
     onEndReached={()=>{//console.log("끝!!");
     }}
-
+    extraData={false}
    onEndReachedThreshold={0.1}
     /> 
     </Fragment>
@@ -691,13 +701,13 @@ const SearchPost = ({route,navigation,deleteComment}) =>{
  
 
 
-
-const CommentInput=({route,upload,navigation})=>
+const CommentInput=({route,navigation})=>
 { 
  
   const textref = React.useRef();
   const [text,setText] = useState("");
-  const [prevent, setPrevent] = useState(route.prevent);
+  //const [prevent, setPrevent] = useState(route.prevent);
+  //console.log("prevent",prevent)
   //console.log(prevent);
  //console.log("Commentinput!!!");
 
@@ -709,29 +719,15 @@ const CommentInput=({route,upload,navigation})=>
          pid: pid,
          text: text
        }
-     }
+     } 
    );
  }
    catch(e){
      console.log(e); 
      }
  } );
-
  
- React.useEffect(()=>{
-  if(prevent){
-
-  printsnum = 0;
-  uploadComment(route.id, text);
-  textref.current.clear();
-  setText(""); 
-  setPrevent(false); 
-  navigation.navigate("Post",{upload:true})}
  
-
- },[prevent])
- 
-   
   return (
   
     <View style={{flexDirection:'row'}}>
@@ -742,33 +738,35 @@ const CommentInput=({route,upload,navigation})=>
      onChangeText={(val)=>setText(val)}
      multiline
      maxLength={commentLen}
+     value = {text}
      maxHeight={60}
       /> 
-  <Button     
+  <Button       
   style={{flex:1}}
-  title="입력" onPress={()=>{
+  title="입력" onPress={()=>{ 
     ////console.log("------------------------",route)
     Keyboard.dismiss();
     var temp = text.trim()
     temp=temp.replace(/(\s|\r\n)+/g," ")
     if(temp.length == 0)Alert.alert("댓글을 입력하세요.");
     else{
-    if(!prevent){
-      setText(temp);
-      setPrevent(true);}
-    }
-
+        printsnum = 0;
+  uploadComment(route.id, text);
+  textref.current.clear();
+  //console.log(text)
+  setText(""); 
+  navigation.navigate("Post",{upload:true})}
+    
   }} />
      </View> 
   
      ); 
 
 }
-   
 
-  
-const CommentContent = React.memo(({post,navigation}) => {
+const CommentContent = React.memo(({post, navigation}) =>{
   //console.log("commentcontent", post.index);
+ 
   const [deleteCommentMutatin] = useMutation(COMMENT_DELETE);
   const deleteComment = React.useCallback(async(cid) =>{
     try{
@@ -782,7 +780,8 @@ const CommentContent = React.memo(({post,navigation}) => {
   catch(e){
     console.log(e); 
     }
-}  );
+} );
+
   const time = new Date(Number(post.item.createdAt)+TIMEZONE);
   return(
     <View style={styles.card2}>
@@ -828,10 +827,10 @@ const CommentContent = React.memo(({post,navigation}) => {
     <Text style={{fontSize:10}}>{time.getFullYear()}/{time.getMonth()+1}/{time.getDate()}/{"  "}{time.getHours()}:{time.getMinutes()}</Text>
     </View>
   ); 
-},areEqual)
-   
+},areEqual_);
+            
 const PostStyle = React.memo(({post}) => {
-  //console.log("poststyle!!!",post);
+  //.log("poststyle!!!");
   const time = new Date(Number(post.createdAt)+TIMEZONE);
   return(
     <View style={styles.card}>
@@ -860,7 +859,7 @@ const PostStyle = React.memo(({post}) => {
       </View>
     </View>
   );
-} ,areEqual);
+} ,areEqual_);
  
 
 const CheckUpload = ({navigation}) => {
@@ -977,7 +976,7 @@ const UpdateScreen = ({navigation, upload})=>{
 export function Search ({route,navigation}){
 
   if(!route.params.needreload){
-    Searchlist = [];
+    Searchlist = [{id:-1,delete:true}];
     searchSnum = 0;
   }
   //console.log("search진입")
@@ -1012,8 +1011,8 @@ export function InitSearch ({init,initstate,navigation}){
     </View>
     <View style={{marginTop:15}}>
     {state ? 
-      getData ?  
-      <InitPrintSearch text={text} navigation={navigation}/>:<GetAllSearch text={text} navigation={navigation} />
+       
+      <GetAllSearch text={text} navigation={navigation} />
     :<View style={{marginTop:'50%',alignItems:'center'}}>
       <AntDesign name="search1" size={50} color="gray" />
       <Text style={{fontSize:20,color:'gray'}} >
@@ -1034,7 +1033,7 @@ const SearchInput = ({needreload,init,setState,setParentText,navigation})=>{
   return( <View style={{flexDirection:'row'}}>
     <TouchableOpacity style={{flex:0.1, alignItems:'center'}}
     onPress={()=>{
-      searchSnum=0; Searchlist=[];
+      searchSnum=0; Searchlist=[{id:-1,delete:true}];
 
       if(needreload) navigation.navigate("Community",{needquery:true})
       else navigation.goBack()}
@@ -1059,10 +1058,10 @@ const SearchInput = ({needreload,init,setState,setParentText,navigation})=>{
       Alert.alert("두 글자 이상 입력해주세요","")
     }
     else{
-    getData = true;
+   // getData = true;
     setState(true); 
     setParentText(text);
-    Searchlist = [];
+    Searchlist = [{id:-1, delete:true}];
     searchSnum = 0;
     }
   }} >
@@ -1095,7 +1094,7 @@ const InitPrintSearch = ({text,navigation}) =>{
 }  
 
 const GetAllSearch = ({text,navigation}) =>{
-  //console.log("getAllsearch!!!@@@@@@",Searchlist)
+ // console.log("getAllsearch!!!@@@@@@",Searchlist)
   const [ 
     fetch, 
     { loading, data }
@@ -1105,11 +1104,11 @@ const GetAllSearch = ({text,navigation}) =>{
 });
 
 if(data!=undefined){
-  ////console.log("@@@@@fetchnew!!!!!!")
+  //console.log("@@@@@fetchnew!!!!!!")
   for(var i=0; i<data.searchPost.length; i++)
     Searchlist.push(data.searchPost[i]);
   searchSnum += data.searchPost.length;
-  ////console.log(Datalist.Array.length)
+
 }
    
 return(  
@@ -1121,33 +1120,41 @@ return(
         return (
           post == null? (null) : <Test post={post} navigation={navigation} search={true}/>
       );
-        }}
+        }}  
     windowSize = {2}
         onEndReached={()=>{//console.log("끝!!"); 
          // //console.log(data)
+         
           if(data == undefined) fetch()
           else{
             if(data.searchPost.length != 0 ){ 
               //console.log("외왆돼")
               fetch(); }
           }
-          }} 
-
+          }}  
+ 
     onEndReachedThreshold={0.1}
-    ListFooterComponent={
-      Searchlist.length != 0 ?
+    ListFooterComponent={()=>{
+      //console.log(data)
+      return(
+      Searchlist.length != 1 ?
               data == undefined?
               <ActivityIndicator color="#1478FF"/>
             :
             data.searchPost.length == 0? 
               (null) :<ActivityIndicator color="#1478FF"/> 
-      :<View style={{marginTop:'50%',alignItems:'center'}}>
+      :data == undefined ?
+        <ActivityIndicator color="#1478FF"/>
+        :
+        data.searchPost.length == 0?
+        <View style={{marginTop:'50%',alignItems:'center'}}>
         <Feather name="alert-circle" size={50} color="gray" />
-      <Text style={{fontSize:20,color:'gray'}} >
-        해당하는 글이 없습니다.
-      </Text>
-      </View>
-    
+        <Text style={{fontSize:20,color:'gray'}} >
+          해당하는 글이 없습니다.
+        </Text>
+        </View>:(null)
+      );
+    }
   }
 
   bounces ={false}
@@ -1171,7 +1178,7 @@ const styles = StyleSheet.create({
   card2: {
     backgroundColor: "white",
     padding: 10,
-    borderWidth: 1,
+    borderWidth: 1, 
     borderColor: "#dcdcdc",
     borderRadius: 5,
     textAlign: "center",

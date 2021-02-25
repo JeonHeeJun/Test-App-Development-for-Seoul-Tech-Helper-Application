@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext,useRef, useCallback,Fragment, useReducer } from 'react';
 import { AppRegistry } from 'react-native';
 import { StyleSheet, Text, View, Button,ScrollView,TouchableOpacity, Image,
-  RefreshControl,TextInput,Alert,FlatList,KeyboardAvoidingView,Dimensions } from 'react-native';
+  RefreshControl,TextInput,Alert,FlatList,KeyboardAvoidingView,Dimensions,Platform } from 'react-native';
 import {colors, Header} from 'react-native-elements';
 import { ApolloClient, ApolloProvider, InMemoryCache, useQuery,useLazyQuery , createHttpLink, useMutation} from "@apollo/client";
 import Modal from 'react-native-modal'
@@ -33,21 +33,23 @@ import { useIsFocused } from '@react-navigation/native'
 
 var KeepData = null;
 
-
  
+  
 //var templist = []
 const titleLen = 100;
 const textLen = 1000;
 const checkLen = 500;
 const realMemoLen = 0;
 const areEqual = (prevProps, nextProps) => {
-  //console.log("areequal!!!!!!!!!!!!!!!!1",nextProps.memo.index, JSON.stringify(prevProps.memo.item.checklist),JSON.stringify(nextProps.memo.item.checklist))
+  console.log("areequal!!!!!!!!!!!!!!!!1",nextProps.memo.index)
   return (JSON.stringify(prevProps.memo.item) === JSON.stringify(nextProps.memo.item)
   &&
   prevProps.memo.index === nextProps.memo.index
   );
  
-}  
+}   
+ 
+
 function useForceUpdate() {
   const [, setTick] = useState(0);
   const update = useCallback(() => {
@@ -83,12 +85,12 @@ return(
     <Text numberOfLines={3} style={{fontSize:17}}>{memo.item.text}</Text>
         {memo.item.checklist.length > 6?
         <View >
-          {memo.item.checklist.slice(0,6).map((check)=><CheckPrint check={check} key={check.id}/>)}
+          {memo.item.checklist.slice(0,6).map((check)=><CheckPrint memo={check} key={check.id}/>)}
           <Text>...</Text>
         </View>
         :
         <View>
-        {memo.item.checklist.map((check)=><CheckPrint check={check} key={check.id}/>)}
+        {memo.item.checklist.map((check)=><CheckPrint memo={check} key={check.id}/>)}
         </View>
         }
     </TouchableOpacity> 
@@ -98,31 +100,32 @@ return(
   
 
 
-const CheckPrint = React.memo(({check})=>{
-  //console.log("checkPrint!!!!!!!!!1",check)
+const CheckPrint = React.memo(({memo})=>{
+  console.log("checkPrint!!!!!!!!!1",memo)
   return ( 
-
-  
+ 
+    
     <View style={{flexDirection:'row', marginTop:10,justifyContent:'space-between'}}> 
  
-      <View style={{flex:0.07}} >
-        {check.toggle ?  
-        <Feather name="check-circle" size={17} color="gray" /> : <Entypo name="circle" size={17} color="black" />
+
+        {memo.toggle ? 
+        <Fragment >
+        <Feather style={{width:'7%'}}  name="check-circle" size={17} color="gray" />
+        <Text style={{textDecorationLine:'line-through',width:'93%',fontSize:17,color:'gray'}}  numberOfLines={2} >{memo.text}</Text> 
+        </Fragment>
+        : 
+        <Fragment>
+        <Entypo style={{width:'7%'}} name="circle" size={17} color="black" />
+        <Text style={{width:'93%',fontSize:17, color:'black'}} numberOfLines={2}>{memo.text}</Text>
+        </Fragment>
         }
-        </View>
-        <View style={{flex:1}}>
-        {check.toggle?
-         <Text style={{textDecorationLine:'line-through',color : 'gray',width:'90%',fontSize:17}} numberOfLines={2} >{check.text}</Text> 
-         :
-         <Text style={{width:'90%',fontSize:17}}numberOfLines={2}>{check.text}</Text>
-        }
-      </View>
+  
         
     </View>
 
-  )
+  ) 
 
-}); 
+})
   
 export const KeepScreen = ({route,navigation})=>{
   const update = useForceUpdate();
@@ -156,9 +159,9 @@ export const KeepScreen = ({route,navigation})=>{
 var refresh = false;
 export const KeepContent = ({reload,navigation}) => {
   const update = useForceUpdate();
-  //console.log("KeepContent!!1:")
-
- 
+ // console.log("KeepContent!!1:")
+  //console.log(KeepData)
+  
   const writeData = useCallback (async () =>{ //데이터 쓰기
       //console.log("write data!!!!!!!!!!")
 
@@ -175,7 +178,7 @@ export const KeepContent = ({reload,navigation}) => {
       const userMemo = await AsyncStorage.getItem("MEMO")
   
       if (userMemo !== null) {
-        //console.log("저장소에 먼가 있음")
+       //console.log("저장소에 먼가 있음")
         KeepData = JSON.parse(userMemo)
         //realMemoLen = KeepData.length;
         update();
@@ -185,6 +188,7 @@ export const KeepContent = ({reload,navigation}) => {
         KeepData = [];
       }
     } catch (e) {
+      console.log(e)
       alert('Failed to fetch the data from storage') 
     }
   });
@@ -243,7 +247,9 @@ export const KeepContent = ({reload,navigation}) => {
 
 var checklist = []
 
-const HeaderComponent = ({route, navigation}) =>{
+
+
+const HeaderComponent = React.memo(({route, navigation}) =>{
 
   const [title,setTitle] = useState(route.params.initTitle);
   const [text, setText] = useState(route.params.initText);
@@ -280,7 +286,7 @@ const HeaderComponent = ({route, navigation}) =>{
       //templist = [];
     // route.params.keep({refresh:true})
       refresh = true;
-  
+   
       navigation.goBack();
     }
  
@@ -372,7 +378,7 @@ const HeaderComponent = ({route, navigation}) =>{
 
   )
 
-}
+});
 
 export const KeepUpload = ({route,navigation}) => {
   //console.log("KeepUpload!!!!",route.params.mode);
@@ -392,9 +398,9 @@ export const KeepUpload = ({route,navigation}) => {
   onEndReached={()=>{//console.log("끝!!");
 
     }}
-
+ 
    onEndReachedThreshold={0.1}
-   ListHeaderComponent={()=><HeaderComponent route={{...route}} navigation={navigation}/>}
+   ListHeaderComponent={<HeaderComponent route={{...route}} navigation={navigation}/>}
 
    />
      <View style={{justifyContent:'flex-end',margin:10}}>
@@ -426,7 +432,7 @@ const ListItem = React.memo(({memo,reload}) =>{ //나중에 매개변수받아�
   //console.log(checklist)
   const [toggle, setToggle] = useState(memo.item.toggle) 
   const [text, setText] = useState(memo.item.text)
- 
+
    
   return(
 
@@ -435,11 +441,11 @@ const ListItem = React.memo(({memo,reload}) =>{ //나중에 매개변수받아�
   <TouchableOpacity onPress={()=>{ 
         if(toggle){
 
-          checklist[memo.index]  = {id:memo.item.id, text:memo.item.text, toggle:false};
+          checklist[memo.index]  = {id:memo.item.id, text:text, toggle:false};
           //[index]  = {id:checklist[index].id, text:checklist[index].text, toggle:false}
           setToggle(false)}
         else{
-          checklist[memo.index] = {id:memo.item.id, text:memo.item.text, toggle:true};
+          checklist[memo.index] = {id:memo.item.id, text:text, toggle:true};
           //templist[index]= {id:checklist[index].id, text:checklist[index].text, toggle:false}
           setToggle(true)}}}
       style={{flex:0.1}}
@@ -468,7 +474,7 @@ const ListItem = React.memo(({memo,reload}) =>{ //나중에 매개변수받아�
 
   onChangeText={(val)=>{
     //templist[index].text = val;
-    checklist[memo.index]={id:memo.item.id, text:val, toggle:memo.item.toggle}
+    checklist[memo.index]={id:memo.item.id, text:val, toggle:toggle}
     setText(val)
   }}
   maxLength={checkLen}
