@@ -15,8 +15,8 @@ const URI_LMS = "https://future.seoultech.ac.kr/login/index.php";
 const URI_HOME  = "https://m-disciplinary.seoultech.ac.kr/";
 const URI_PORTAL = "http://portal.seoultech.ac.kr/";
 
-const NOTIF_BOARD_ID = 6 //공지사항 게시판 ID
-const STU_NOTIF_BOARD_ID = 8 //학생회알림 게시판 ID
+const NOTIF_BOARD_ID = 3 //공지사항 게시판 ID
+const STU_NOTIF_BOARD_ID = 2 //학생회알림 게시판 ID
 
 const NOW = new Date();
 const TIMEZONE = NOW.getTimezoneOffset()*60000;
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
     color: "grey",
     flex:1,
     flexDirection:"row",
-    marginHorizontal: "25%"
+    marginHorizontal: "15%"
   },
   container: {
     flex: 1,

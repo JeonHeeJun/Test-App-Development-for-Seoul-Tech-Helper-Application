@@ -171,7 +171,7 @@ export default function MainScreen(){
         <IdContext.Provider value = {temp} >
  
         <Stack.Navigator>
-          <Stack.Screen name="홈므로" component={DefaultScreen} options={{headerShown: false}}/>
+          <Stack.Screen name="Back" component={DefaultScreen} options={{headerShown: false}}/>
           <Stack.Screen name="Community" component={Community} />
           <Stack.Screen name="Post" component={Post}  /> 
           <Stack.Screen name="Upload" component={Upload} options={{headerShown: false}} />

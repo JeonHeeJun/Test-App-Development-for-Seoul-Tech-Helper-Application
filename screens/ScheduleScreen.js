@@ -56,7 +56,7 @@ function get_currenet_week(START_DATE){
   if(START_DATE){
     const START_WEEK = START_DATE.getWeek(1);
     console.log("START_WEEK: ", START_WEEK);
-    return NOW.getWeek(1)-START_WEEK;
+    return NOW.getWeek(1)-START_WEEK+1;
   }
 }
 
@@ -154,9 +154,9 @@ const Weekday = ({ classes, day }) => {
   )
 }
 
-function Weekly({ class_list }) {
+function Weekly({ class_list,WEEK }) {
   const weekdays = [0,1, 2, 3, 4, 5,6,7]; // [월,화,수,목,금,토,일,VOD]
-  const current_week = get_currenet_week();
+  const current_week = WEEK;
 
   let weekly_classes = new Array(8);
   for (let i=0; i<weekly_classes.length; i++){
@@ -425,7 +425,7 @@ function Main({navigation, START_DATE}) {
         }
         <View style={{flex:5}}>
           <Text style={{ textAlign: "left", paddingLeft: 30, fontWeight: "700", paddingTop: 10 }}>금주 수업 {WEEK<0? 0:WEEK}주차</Text>
-          <Weekly class_list={class_list} />
+          <Weekly class_list={class_list} WEEK={WEEK}/>
         </View>
         <View style={{flex:5}}>
           <Text style={{ textAlign: "left", paddingLeft: 30, fontWeight: "700", paddingTop: 10 }}>전체 시간표</Text>

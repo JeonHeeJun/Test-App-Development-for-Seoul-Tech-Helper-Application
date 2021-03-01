@@ -500,7 +500,7 @@ export function Post({route,navigation}){
     
          headerLeft :()=>{////console.log("정신나갈거같에정시난갈거같에정신",route.upload)
     
-         if(route.fromhome) return (<HeaderBackButton onPress={()=>{printsnum = 0;navigation.goBack()}} label="홈으로"/>);
+         if(route.fromhome) return (<HeaderBackButton onPress={()=>{printsnum = 0;navigation.goBack()}}/>);
          return (route.upload == true) ?
               (<HeaderBackButton onPress={()=>{printsnum = 0;
                 if(route.search){
