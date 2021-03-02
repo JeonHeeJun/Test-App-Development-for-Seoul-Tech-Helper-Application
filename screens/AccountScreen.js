@@ -24,6 +24,11 @@ const options = [                               // "수업 n분 전 알림"을 �
   { label: '60분', value: 60 },
 ];
 
+// 시간(hours) 조정 함수
+Date.prototype.addHours = function(h) {
+  this.setTime(this.getTime() + (h*60*60*1000));
+  return this;
+}
 // 자바스크립트의 Date를 받아서 ICS Date 형식으로 바꾸어 리턴
 function convertToICSDate(dateTime) {
     const year = dateTime.getFullYear().toString();
@@ -60,16 +65,16 @@ BEGIN:VTIMEZONE
 TZID:Asia/Seoul
 X-LIC-LOCATION:Asia/Seoul
 BEGIN:STANDARD
-TZOFFSETFROM:+0900
-TZOFFSETTO:+0900
+TZOFFSETFROM:+0000
+TZOFFSETTO:+0000
 TZNAME:KST
 DTSTART:19700101T000000
 END:STANDARD
 END:VTIMEZONE
 `;
   for(let i=0; i<class_list.length; i++){
-    template += createVEVENT(class_list[i].start_time, 
-                             class_list[i].end_time, 
+    template += createVEVENT(class_list[i].start_time.addHours(-9), 
+                             class_list[i].end_time.addHours(-9), 
                              class_list[i].name, 
                              class_list[i].name,
                              class_list[i].room);
@@ -142,7 +147,7 @@ function Sub({class_list}){
         if(class_list[i].start_time < NOW) continue;
 
         let trigger = new Date(class_list[i].start_time.getTime() - val*60*1000);
-
+        //console.log("trigger:",trigger);
         let month = class_list[i].start_time.getMonth()+1;
         let date = class_list[i].start_time.getDate();
         let sH = class_list[i].start_time.getHours();

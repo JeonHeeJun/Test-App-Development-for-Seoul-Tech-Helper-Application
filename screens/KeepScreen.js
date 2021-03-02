@@ -41,7 +41,7 @@ const textLen = 1000;
 const checkLen = 500;
 const realMemoLen = 0;
 const areEqual = (prevProps, nextProps) => {
-  console.log("areequal!!!!!!!!!!!!!!!!1",nextProps.memo.index)
+  //console.log("areequal!!!!!!!!!!!!!!!!1",nextProps.memo.index)
   return (JSON.stringify(prevProps.memo.item) === JSON.stringify(nextProps.memo.item)
   &&
   prevProps.memo.index === nextProps.memo.index
@@ -101,7 +101,7 @@ return(
 
 
 const CheckPrint = React.memo(({memo})=>{
-  console.log("checkPrint!!!!!!!!!1",memo)
+  //console.log("checkPrint!!!!!!!!!1",memo)
   return ( 
  
     
