@@ -126,14 +126,14 @@ const CustomMenu = (props) => { //메뉴 버튼
             <TouchableOpacity onPress={() => _menu.show()}>
               <Ionicons name="menu" size={30}/>
             </TouchableOpacity>
-        }>
+        }> 
         <MenuItem onPress={() => {
          if (Platform.OS === 'ios'){  
           Alert.alert("글 설정","",
           [{ text: "20", onPress: () => { tnum =20 ; setModalVisible(false);props.navigation.navigate("Community",{needquery:true}) }},
           { text: "40(기본값)", onPress: () => { tnum =40 ; setModalVisible(false);props.navigation.navigate("Community",{needquery:true}) }},
           { text: "60", onPress: () => { tnum =60 ; setModalVisible(false);props.navigation.navigate("Community",{needquery:true}) }},
-        ]);
+        ],{ cancelable: true });
          } 
          else setModalVisible(true);
         }}>글 설정</MenuItem>
@@ -296,7 +296,7 @@ function GetAllPost({needquery,navigation}){
     refreshControl={<RefreshControl refreshing={refreshing} onRefresh ={onRefresh}/>}
       />
     
-      <View style={{borderWidth:1,position:'absolute',bottom:10,alignSelf:'center'}}>
+      <View style={{borderWidth:1,position:'absolute',bottom:Platform.OS === 'ios'?'4%': 10,alignSelf:'center'}}>
       {type == 0 ?
       Uid.grade == 0 ? <UploadPostButton navigation={navigation}/> : (null)
       : 

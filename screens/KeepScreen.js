@@ -232,8 +232,8 @@ export const KeepContent = ({reload,navigation}) => {
         bounces={false}
        onEndReachedThreshold={0.1}
       />     
-      }
-      <View style={{borderWidth:1,position:'absolute',bottom:10,alignSelf:'center'}}>
+      } 
+      <View style={{borderWidth:1,position:'absolute',bottom:Platform.OS === 'ios'?'3%':10,alignSelf:'center'}}>
       {Platform.OS === 'ios' ?
        <TouchableOpacity 
        style={{width:150,height:35,backgroundColor:'dodgerblue'}}
@@ -253,7 +253,7 @@ export const KeepContent = ({reload,navigation}) => {
         </View> 
     </View> 
   );
-}
+} 
  
 
 
@@ -322,7 +322,8 @@ const HeaderComponent = React.memo(({route, navigation}) =>{
 
   return(
         <Fragment>
-        <View style={{flex:1 ,marginTop:40, marginHorizontal:10 ,flexDirection:'row',justifyContent:'space-between'}}>
+        <View style={{flex:1 ,marginTop:Platform.OS === 'ios'? '15%' : 40, marginHorizontal:10 , bottom: Platform.OS === 'ios'? '3%': 0,
+        flexDirection:'row',justifyContent:'space-between'}}>
           <View style = {{flexDirection: 'row'}}>
           <TouchableOpacity  style={{alignSelf:'center'}}
           onPress= {()=>{ 
