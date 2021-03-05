@@ -12,6 +12,7 @@ import * as Notifications from 'expo-notifications';
 // 통신 패키지 
 import { ApolloClient, ApolloProvider, InMemoryCache, useMutation, useQuery, useLazyQuery, createHttpLink } from "@apollo/client";
 import {LOGIN} from './queries';
+import * as Permissions from 'expo-permissions'
 
 const client = new ApolloClient({
   uri: "http://52.251.50.212:4000/",
@@ -21,6 +22,7 @@ const client = new ApolloClient({
 function Sub() {
   //const [isLoading, setIsLoading] = React.useState(true);
   //const [token, setUserToken] = React.useState(null);
+
   const [userEmail, setUserEmail] = React.useState(null);
   const [loginMutation] = useMutation(LOGIN);
 
@@ -185,7 +187,7 @@ function Sub() {
       console.log('lastNotif:', lastNotif);
       setUserEmail(userEmail);
       dispatch({ type: "RETRIEVE_TOKEN", token: token, email: userEmail, lastNotif: lastNotif});
-    }, 3000);
+    }, 10);
   }, []);
 
   if (loginState.isLoading) {
@@ -213,6 +215,8 @@ function Sub() {
 
 
 export default function App(){
+
+
   //AsyncStorage.clear();
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -221,6 +225,15 @@ export default function App(){
       shouldSetBadge: false,
     }),
   });
+  
+  Permissions.getAsync(Permissions.NOTIFICATIONS).then((res)=>{
+    console.log("get res:",res);
+    if(res.status != 'granted'){
+      Permissions.askAsync(Permissions.NOTIFICATIONS).then((res)=>{
+        console.log("ask res:", res);
+      })
+    }
+  })
   
   // Second, call the method
   /*
