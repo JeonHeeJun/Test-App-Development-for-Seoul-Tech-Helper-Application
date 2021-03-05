@@ -352,9 +352,9 @@ export function Community({route, navigation}){
     snum = 0;
     Datalist = {Array:[{id:-1,delete:true}], scroll:0};
   }
-   
+  
   React.useLayoutEffect(() => {
-    
+
     navigation.setOptions({
  
       headerRight: () => { //새로고침 버튼
