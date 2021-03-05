@@ -227,17 +227,29 @@ export const KeepContent = ({reload,navigation}) => {
         }}
         windowSize={2}
         onEndReached={()=>{//console.log("끝!!");
-
+        
         }}
-
+        bounces={false}
        onEndReachedThreshold={0.1}
       />     
       }
       <View style={{borderWidth:1,position:'absolute',bottom:10,alignSelf:'center'}}>
+      {Platform.OS === 'ios' ?
+       <TouchableOpacity 
+       style={{width:150,height:35,backgroundColor:'dodgerblue'}}
+       onPress={()=>{ 
+         checklist=[]
+         //templist =[]
+         navigation.navigate("keepUpload",{mode:"write", initText:"", initTitle:"",initButton : false})}}
+         > 
+       <Text style={{paddingTop:5,alignSelf:'center', fontSize:20, color:'white'}}>체크리스트 추가</Text>
+       </TouchableOpacity> 
+      :
         <Button title="체크리스트 추가" onPress={()=>{
           checklist=[]
           //templist =[]
           navigation.navigate("keepUpload",{mode:"write", initText:"", initTitle:"",initButton : false})}}/>
+        }
         </View> 
     </View> 
   );
@@ -248,7 +260,7 @@ export const KeepContent = ({reload,navigation}) => {
 var checklist = []
 
 
-
+const offset = Platform.OS == 'ios' ? 100 : 0
 const HeaderComponent = React.memo(({route, navigation}) =>{
 
   const [title,setTitle] = useState(route.params.initTitle);
@@ -401,9 +413,12 @@ export const KeepUpload = ({route,navigation}) => {
  
    onEndReachedThreshold={0.1}
    ListHeaderComponent={<HeaderComponent route={{...route}} navigation={navigation}/>}
-
+    bounces={false}
    />
-     <View style={{justifyContent:'flex-end',margin:10}}>
+     <View style={{justifyContent:'flex-end',marginHorizontal:10, 
+     marginBottom:Platform.OS === 'ios'? '10%' : 10 
+  
+    }}>
   <KeyboardAvoidingView 
    behavior={Platform.OS === "ios" ? "padding" : "height"}>
     <TouchableOpacity  

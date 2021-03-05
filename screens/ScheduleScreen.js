@@ -14,7 +14,8 @@ import {
 
 const AD_ID = Platform.OS === 'ios'? "ca-app-pub-8233357974153609/2214173566" : "ca-app-pub-8233357974153609/1707547735"
 const colors = [
-  "#AFFFEE", "#00F5FF", "#FFE4E1", "#FFFF96" , "#FFDAB9", "#FAC6C6", "#82F9B7" ,"#FAEBD7"
+  "#D9D9D9", "#ACB9CA", "#BDD7EE", "#F8CBAD", "#FFE699", "#B4C6E7", "#C6E0B4", "#EEC3EF", "#E6D8B4",
+"#EEB8B8"
 ]
 let colorIndex = 0;
 let colorMap = {};

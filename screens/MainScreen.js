@@ -68,6 +68,7 @@ const MoveBoard = ({navigation})=>{ //추가
   //console.log(data)
   return (
     <FlatList
+      bounces = {false}
       keyExtractor={(board) => board.id.toString()}
       data = {data.seeAllBoard} 
       renderItem ={(board)=>{

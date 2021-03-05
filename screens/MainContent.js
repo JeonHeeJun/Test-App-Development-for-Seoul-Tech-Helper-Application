@@ -81,6 +81,14 @@ const check = (id) =>{//삭제버튼 띄우는 조건
 
 const UploadPostButton = ({navigation})=>{ //업로드버튼
   return (
+  Platform.OS === 'ios' ? 
+  <TouchableOpacity 
+  style={{width:80,height:35,backgroundColor:'dodgerblue'}}
+  onPress={()=>{ navigation.navigate("Upload")}}
+    > 
+  <Text style={{paddingTop:5,alignSelf:'center', fontSize:20, color:'white'}}>글쓰기</Text>
+  </TouchableOpacity> 
+  :
   <Button
     title="글쓰기"
     accessibilityLabel="글쓰기"
@@ -120,7 +128,14 @@ const CustomMenu = (props) => { //메뉴 버튼
             </TouchableOpacity>
         }>
         <MenuItem onPress={() => {
-          setModalVisible(true);
+         if (Platform.OS === 'ios'){  
+          Alert.alert("글 설정","",
+          [{ text: "20", onPress: () => { tnum =20 ; setModalVisible(false);props.navigation.navigate("Community",{needquery:true}) }},
+          { text: "40(기본값)", onPress: () => { tnum =40 ; setModalVisible(false);props.navigation.navigate("Community",{needquery:true}) }},
+          { text: "60", onPress: () => { tnum =60 ; setModalVisible(false);props.navigation.navigate("Community",{needquery:true}) }},
+        ]);
+         } 
+         else setModalVisible(true);
         }}>글 설정</MenuItem>
          
       </Menu>
@@ -131,7 +146,7 @@ const CustomMenu = (props) => { //메뉴 버튼
      
   
 const areEqual_ = (prevProps, nextProps)=>{
-  //console.log("areequal!!!!!!!!!",JSON.stringify(prevProps.post.item) === JSON.stringify(nextProps.post.item))
+  //console.log("areequal!!!!!!!!!",prevProps.post.index)
   return ( JSON.stringify(prevProps.post.item) === JSON.stringify(nextProps.post.item) );
 
 }
@@ -262,12 +277,12 @@ function GetAllPost({needquery,navigation}){
       ListFooterComponent={
         Datalist.Array.length != 1 ?
                 data == undefined?
-                <ActivityIndicator color="#1478FF"/>
+                <ActivityIndicator style={{paddingTop:'10%'}} color="#1478FF"/>
               :
               data.loadPost.length == 0? 
-                (null) :<ActivityIndicator color="#1478FF"/> 
+                (null) :<ActivityIndicator style={{paddingTop:'10%'}} color="#1478FF"/> 
         : data == undefined ?
-          <ActivityIndicator color="#1478FF"/>
+          <ActivityIndicator style={{paddingTop:'10%'}} color="#1478FF"/>
           :
           data.loadPost.length == 0?
           <View style={{marginTop:'50%',alignItems:'center'}}>
@@ -278,7 +293,6 @@ function GetAllPost({needquery,navigation}){
           </View>:(null)
            
     }
-    bounces ={false}
     refreshControl={<RefreshControl refreshing={refreshing} onRefresh ={onRefresh}/>}
       />
     
@@ -423,6 +437,7 @@ export function Post({route,navigation}){
   }
      
 
+
   const SetHeader = ({route,navigation})=>{ //새로고침,삭제 헤더버튼 추가.
     //console.log("hedear----------------------");
   
@@ -546,7 +561,7 @@ allComment = route.params.Comment;
 
   return(
    
-      <View style={{flex:1}}>
+      <Fragment>
       <SetHeader route={{id: route.params.id , upload: route.params.upload, 
         userId: route.params.UserId, num:route.params.num, 
         fromhome: route.params.fromhome, search:route.params.search}}
@@ -568,11 +583,20 @@ allComment = route.params.Comment;
           user : route.params.User, search:route.params.search
         }}
          navigation ={navigation}/>
-        }   
-      <View style={{justifyContent:'flex-end',margin:10}}>
+        } 
+  {Platform.OS === 'ios'?
+ <KeyboardAvoidingView style={{flexDirection:'row',justifyContent:'flex-end',marginBottom:'7%', marginHorizontal:'3%',marginTop:'3%'}}
+    behavior={Platform.OS === "ios" ? "padding" : "height"}
+    keyboardVerticalOffset={offset}
+    >
       <CommentInput  route={{id: route.params.id}} navigation ={navigation}/>
-  </View>
-  </View>);
+      </KeyboardAvoidingView>
+  :
+  <View style={{justifyContent:'flex-end',margin:10}}>
+  <CommentInput  route={{id: route.params.id}} navigation ={navigation}/>
+</View>
+}
+  </Fragment>);
 }      
          
 
@@ -600,6 +624,7 @@ const PrintAllContent = ({navigation}) =>{
     }}
     extraData={false}
    onEndReachedThreshold={0.1}
+   bounces={false}
     /> 
     </Fragment>
   );
@@ -608,7 +633,7 @@ const PrintAllContent = ({navigation}) =>{
   
 const Loading = ({navigation}) =>{
   //console.log("loading----------------")
-     return <ActivityIndicator color="#1478FF"/>
+     return <ActivityIndicator  style={{paddingTop:'10%'}} color="#1478FF"/>
 }
   
 
@@ -666,7 +691,7 @@ const SearchPost = ({route,navigation,deleteComment}) =>{
   const{loading, error, data} = useQuery(POST_INFO,{ //댓글 불러오는 쿼리
     variables: {pid: route.id}
   })
-  if(loading) return (<ActivityIndicator color="#1478FF"/>);
+  if(loading) return (<ActivityIndicator style={{paddingTop:'10%'}} color="#1478FF"/>);
   if(error) return(<Text>에러!!{error}</Text>);
  // //console.log(data);
   if(data.seePost == null){
@@ -701,6 +726,7 @@ const SearchPost = ({route,navigation,deleteComment}) =>{
  
 
 
+const offset = Platform.OS == 'ios' ? 100 : 0
 const CommentInput=({route,navigation})=>
 { 
  
@@ -730,6 +756,36 @@ const CommentInput=({route,navigation})=>
  
   return (
   
+    Platform.OS === 'ios'?
+    <Fragment >
+    <TextInput
+    ref = {textref}
+    style={{flex:1, backgroundColor : 'gainsboro'}}
+       placeholder="댓글을 입력하세요."
+       onChangeText={(val)=>setText(val)}
+       multiline
+       maxLength={commentLen}
+       value = {text}
+       maxHeight={60}
+        /> 
+      
+    <TouchableOpacity style={{flex:0.1, width:35, height:35,backgroundColor : 'gainsboro'}} onPress={() => {
+      Keyboard.dismiss();
+      var temp = text.trim()
+      temp=temp.replace(/(\s|\r\n)+/g," ")
+      if(temp.length == 0)Alert.alert("댓글을 입력하세요.");
+      else{
+          printsnum = 0;
+      uploadComment(route.id, text);
+      textref.current.clear();
+      //console.log(text)
+      setText(""); 
+      navigation.navigate("Post",{upload:true})}
+    }}>
+      <FontAwesome style={{alignSelf:'center',color:'dodgerblue',paddingTop:5}}name="paper-plane" size={24} color ="black" />
+    </TouchableOpacity>
+  </Fragment>
+    :
     <View style={{flexDirection:'row'}}>
   <TextInput
   ref = {textref}
@@ -741,6 +797,7 @@ const CommentInput=({route,navigation})=>
      value = {text}
      maxHeight={60}
       /> 
+
   <Button       
   style={{flex:1}}
   title="입력" onPress={()=>{ 
@@ -758,6 +815,7 @@ const CommentInput=({route,navigation})=>
   navigation.navigate("Post",{upload:true})}
     
   }} />
+
      </View> 
   
      ); 
@@ -906,7 +964,8 @@ const UpdateScreen = ({navigation, upload})=>{
 
   return(<KeyboardAwareScrollView>
  
-      <View style={{flex:1 ,marginTop:40, marginHorizontal:10 ,flexDirection:'row',justifyContent:'space-between'}}>
+      <View style={{flex:1 ,marginTop:Platform.OS ==='ios'?'15%': 40
+      , marginHorizontal:10 ,flexDirection:'row',justifyContent:'space-between'}}>
     <View style = {{flexDirection: 'row'}}>
     <TouchableOpacity  style={{alignSelf:'center'}}
     onPress= {()=>{ 
@@ -1076,7 +1135,7 @@ const InitPrintSearch = ({text,navigation}) =>{
   const {loading, error, data} = useQuery(POST_SEARCH,{
     variables: {bid: Bid, snum: 0, tnum: tnum, text:text}
   }); 
-  if(loading)return <ActivityIndicator color="#1478FF"/>
+  if(loading)return <ActivityIndicator  style={{paddingTop:'10%'}} color="#1478FF"/>
   if(error)return <Text>에러!!</Text>
 
  
@@ -1139,12 +1198,12 @@ return(
       return(
       Searchlist.length != 1 ?
               data == undefined?
-              <ActivityIndicator color="#1478FF"/>
+              <ActivityIndicator style={{paddingTop:'10%'}} color="#1478FF"/>
             :
             data.searchPost.length == 0? 
-              (null) :<ActivityIndicator color="#1478FF"/> 
+              (null) :<ActivityIndicator style={{paddingTop:'10%'}} color="#1478FF"/> 
       :data == undefined ?
-        <ActivityIndicator color="#1478FF"/>
+        <ActivityIndicator style={{paddingTop:'10%'}} color="#1478FF"/>
         :
         data.searchPost.length == 0?
         <View style={{marginTop:'50%',alignItems:'center'}}>
